@@ -35,6 +35,12 @@ const steps=[
     ${checks('site_access','Site Access',['Ground Floor Access','Upper Floor Access','Elevator Available','Stair Access Only','Restricted Access','Parking Available','Loading Area Available','Narrow Passageway','Roof Access Required','Confined Space'])}${checks('equipment_required','Equipment Required',['Ladder','Scaffold','Boom Lift','Rope Access','Additional Manpower'])}
     ${checks('hazards','Hazards Identified',['Working at Height','Live Electrical Source','Wet Area','Fragile Ceiling','Restricted Workspace','Heavy Lifting Required','Roof Work','Falling Object Hazard','Confined Space','No Significant Risk Identified'])}${checks('controls','Required Controls',['PPE Required','Lockout / Tagout','Safety Barricade','Spotter Required','Fall Protection Equipment','Permit to Work Required','Safety Orientation Required'])}${select('risk_level','Overall Risk Level',['Low','Medium','High','Critical'])}${field('safety_remarks','Safety Remarks','textarea',false,true)}
   </div></div>`},
+  {title:'Building & Environmental',html:()=>`<div class="step"><div class="grid">
+    ${checks('building_admin','Building / Admin Requirements',['Building Permit Required','HOA / Condo Corp Approval Required','Working Hours Restricted','Access Card / Gate Pass Required','Insurance / Bond Required','Freight Elevator Booking Required'])}
+    ${field('building_admin_remarks','Building/Admin Remarks','textarea',false,true)}
+    ${checks('environmental','Environmental / Site Considerations',['Noise Restrictions','Dust / Debris Control Required','Exposed to Weather / Elements','Protected Trees or Landscaping Nearby','Existing Structure Protection Required','Waste Disposal Arrangement Required'])}
+    ${field('environmental_remarks','Environmental Remarks','textarea',false,true)}
+  </div></div>`},
   {title:'Materials / Additional Works',html:()=>`<div class="step"><div class="grid">
     ${field('copper_est','Copper Tube (m)','number')}${field('insulation_est','Pipe Insulation (m)','number')}${field('drain_est','Drain Hose (m)','number')}${field('interconnect_est','Interconnecting Wire (m)','number')}${field('power_est','Power Cable (m)','number')}${field('tape_est','PVC Tape (roll)','number')}${field('electrical_tape_est','Electrical Tape (roll)','number')}${field('ties_est','Cable Ties (pcs)','number')}${field('sleeve_est','Wall Sleeve (pcs)','number')}${field('anchor_est','Anchor Bolts (pcs)','number')}${field('bracket_est','Outdoor Bracket (set)','number')}${field('breaker_est','Circuit Breaker (pcs)','number')}${field('pvc_est','PVC Pipe (m)','number')}${field('elbow_est','PVC Elbow (pcs)','number')}
     ${checks('additional_works','Additional Works',['Electrical Works','Concrete Coring','Scaffolding','Boom Truck / Lifter','Ceiling Works','Masonry Works','Waterproofing','Dismantling Existing Unit','Relocation of Existing Unit','Additional Copper Tubing','Additional Drain Hose','Additional Wiring','Refrigerant Charging','Others'])}
@@ -87,6 +93,8 @@ function collect(){
   piping:{routes:readChecks('piping_routes'),copperTube:read('copper_tube'),drainHose:read('drain_hose'),controlWire:read('control_wire'),powerCable:read('power_cable'),totalRoute:read('total_pipe_route'),verticalRise:read('vertical_rise'),remarks:read('piping_remarks')},
   access:{checks:readChecks('site_access'),equipment:readChecks('equipment_required')},
   safety:{hazards:readChecks('hazards'),controls:readChecks('controls'),risk:read('risk_level'),remarks:read('safety_remarks')},
+  buildingAdmin:{checks:readChecks('building_admin'),remarks:read('building_admin_remarks')},
+  environmental:{checks:readChecks('environmental'),remarks:read('environmental_remarks')},
   customerApproval:{name:read('customer_name_ack'),signature:read('customer_signature'),date:read('customer_ack_date')}
  };
  const mats=[['Copper Tube',read('copper_est'),'Meters'],['Pipe Insulation',read('insulation_est'),'Meters'],['Drain Hose',read('drain_est'),'Meters'],['Interconnecting Wire',read('interconnect_est'),'Meters'],['Power Cable',read('power_est'),'Meters'],['PVC Tape',read('tape_est'),'Roll'],['Electrical Tape',read('electrical_tape_est'),'Roll'],['Cable Ties',read('ties_est'),'Pcs'],['Wall Sleeve',read('sleeve_est'),'Pcs'],['Anchor Bolts',read('anchor_est'),'Pcs'],['Outdoor Bracket',read('bracket_est'),'Set'],['Circuit Breaker',read('breaker_est'),'Pcs'],['PVC Pipe',read('pvc_est'),'Meters'],['PVC Elbow',read('elbow_est'),'Pcs']].filter(x=>x[1]!=='' ).map(x=>({material:x[0],qty:x[1],unit:x[2]}));
@@ -111,6 +119,81 @@ function cancelInspection(){document.getElementById('inspectionPanel').classList
 function next(){const inputs=[...document.querySelectorAll('.step.active input,.step.active select,.step.active textarea')];const valid=inputs.every(x=>x.checkValidity());if(!valid){inputs.find(x=>!x.checkValidity())?.reportValidity();return}if(step<steps.length-1){step++;showStep()}else saveInspection()}
 async function saveInspection(){const data=collect();if(!navigator.onLine||API_URL.includes('PASTE_')){const q=queue();q.push(data);setQueue(q);finishSaved('Saved offline — will sync automatically when online.');return}try{const r=await api('saveInspection',{session,inspection:data});if(!r.ok)throw new Error(r.error);finishSaved(`Inspection ${r.inspectionId} saved to Google Sheets.`);loadDashboard();}catch(e){const q=queue();q.push(data);setQueue(q);finishSaved('Saved on device because the server is unavailable.');}}
 function finishSaved(msg){document.getElementById('inspectionPanel').classList.add('hidden');document.getElementById('dashboardPanel').classList.remove('hidden');alert(msg);updateOfflineBanner()}
-function boot(){document.getElementById('loginView').classList.add('hidden');document.getElementById('mainView').classList.remove('hidden');document.getElementById('userName').textContent=session?.fullName?`Signed in as ${session.fullName}`:'';updateOfflineBanner();loadDashboard();syncQueue();}
+function boot(){document.getElementById('loginView').classList.add('hidden');document.getElementById('mainView').classList.remove('hidden');document.getElementById('userName').textContent=session?.fullName?`Signed in as ${session.fullName}`:'';applyRoleUI();updateOfflineBanner();loadDashboard();syncQueue();}
 
-document.getElementById('loginForm').addEventListener('submit',login);document.getElementById('logoutBtn').addEventListener('click',logout);document.getElementById('newInspectionBtn').addEventListener('click',startInspection);document.getElementById('cancelInspectionBtn').addEventListener('click',cancelInspection);document.getElementById('prevBtn').addEventListener('click',()=>{if(step>0){step--;showStep()}});document.getElementById('nextBtn').addEventListener('click',next);document.getElementById('refreshBtn').addEventListener('click',()=>{loadDashboard();syncQueue()});window.addEventListener('online',()=>{updateOfflineBanner();syncQueue()});window.addEventListener('offline',updateOfflineBanner);window.addEventListener('load',()=>{if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});if(loadSession())boot();});
+const REVIEW_ROLES=['Admin','Supervisor'];
+function applyRoleUI(){document.getElementById('reviewNavBtn').classList.toggle('hidden', !(session && REVIEW_ROLES.includes(session.role)));}
+
+function openReviewQueue(){document.getElementById('dashboardPanel').classList.add('hidden');document.getElementById('reviewPanel').classList.remove('hidden');loadReviewQueue();}
+function backToDashboard(){document.getElementById('reviewPanel').classList.add('hidden');document.getElementById('reviewDetailPanel').classList.add('hidden');document.getElementById('dashboardPanel').classList.remove('hidden');}
+function backToReviewList(){document.getElementById('reviewDetailPanel').classList.add('hidden');document.getElementById('reviewPanel').classList.remove('hidden');loadReviewQueue();}
+
+async function loadReviewQueue(){if(!session)return;try{const r=await api('listReview',{session});if(!r.ok)throw new Error(r.error);renderReviewList(r.inspections||[]);}catch(e){document.getElementById('reviewList').innerHTML=`<p>${e.message}</p>`;}}
+function renderReviewList(list){
+  document.getElementById('reviewList').innerHTML=list.map(x=>`<div class="recent review-item" onclick="openReviewDetail('${x.inspectionId}')">
+    <div><strong>${x.inspectionId}</strong><div>${x.customerName||'—'} · ${x.projectAddress||'—'}</div>
+      <div class="review-flags"><span class="flag ${x.hasApproval?'done':''}">Approval</span><span class="flag ${x.hasQC?'done':''}">QC</span><span class="flag ${x.hasSchedule?'done':''}">Schedule</span></div>
+    </div><span class="badge">${x.status||'—'}</span></div>`).join('') || '<p>No inspections yet.</p>';
+}
+
+let currentReviewId=null;
+async function openReviewDetail(inspectionId){
+  currentReviewId=inspectionId;
+  try{
+    const r=await api('getInspection',{session,inspectionId});
+    if(!r.ok)throw new Error(r.error);
+    renderReviewDetail(r);
+    document.getElementById('reviewPanel').classList.add('hidden');
+    document.getElementById('reviewDetailPanel').classList.remove('hidden');
+  }catch(e){ alert(e.message); }
+}
+
+function renderReviewDetail(d){
+  document.getElementById('reviewDetailTitle').textContent=d.inspection.InspectionID;
+  document.getElementById('reviewDetailSub').textContent=`${d.customer?.CustomerName||''} · ${d.project?.ProjectAddress||''} · Status: ${d.inspection.InspectionStatus||''}`;
+
+  const existingApproval=(d.approvals||[]).slice(-1)[0];
+  document.getElementById('reviewTabApproval').innerHTML=`<div class="grid">
+    ${field('appr_name','Approved By (Name)','text',true)}${field('appr_signature','Signature (type name for V1)','text',true)}${field('appr_date','Approval Date','date',true)}
+  </div><button type="button" class="primary" onclick="submitApproval()">${existingApproval?'Update':'Save'} Approval</button>`;
+  if(existingApproval){document.getElementById('appr_name').value=existingApproval.Name||'';document.getElementById('appr_signature').value=existingApproval.SignatureData||'';document.getElementById('appr_date').value=existingApproval.Date||'';}
+
+  const existingQc=(d.qc||[]).slice(-1)[0];
+  document.getElementById('reviewTabQc').innerHTML=`<div class="grid">
+    ${select('qc_result','QC Result',['Pass','Pass with Findings','Fail'])}${field('qc_ncr','NCR Reference','text')}${field('qc_corrective','Corrective Action','textarea',false,true)}${field('qc_target_date','Target Completion Date','date')}${field('qc_reviewer','Reviewer Name','text',true)}
+  </div><button type="button" class="primary" onclick="submitQC()">${existingQc?'Update':'Save'} QC Verification</button>`;
+  if(existingQc){document.getElementById('qc_result').value=existingQc.Result||'';document.getElementById('qc_ncr').value=existingQc.NCRReference||'';document.getElementById('qc_corrective').value=existingQc.CorrectiveAction||'';document.getElementById('qc_target_date').value=existingQc.TargetCompletionDate||'';document.getElementById('qc_reviewer').value=existingQc.ReviewerName||'';}
+
+  const existingSchedule=(d.schedules||[]).slice(-1)[0];
+  document.getElementById('reviewTabSchedule').innerHTML=`<div class="grid">
+    ${field('sch_team','Installation Team','text',true)}${field('sch_lead','Lead Technician','text',true)}${field('sch_date','Schedule Date','date',true)}${field('sch_expected','Expected Completion Date','date')}
+  </div><button type="button" class="primary" onclick="submitSchedule()">${existingSchedule?'Update':'Save'} Schedule</button>`;
+  if(existingSchedule){document.getElementById('sch_team').value=existingSchedule.Team||'';document.getElementById('sch_lead').value=existingSchedule.LeadTechnician||'';document.getElementById('sch_date').value=existingSchedule.ScheduleDate||'';document.getElementById('sch_expected').value=existingSchedule.ExpectedCompletionDate||'';}
+
+  switchReviewTab('approval');
+}
+
+function switchReviewTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.review-tab').forEach(el=>el.classList.remove('active'));
+  const map={approval:'reviewTabApproval',qc:'reviewTabQc',schedule:'reviewTabSchedule'};
+  document.getElementById(map[tab]).classList.add('active');
+}
+
+async function submitApproval(){
+  const approval={inspectionId:currentReviewId,name:read('appr_name'),signatureData:read('appr_signature'),date:read('appr_date')};
+  if(!approval.name||!approval.signatureData||!approval.date){alert('Approved By, Signature, and Date are required.');return;}
+  try{const r=await api('saveApproval',{session,approval});if(!r.ok)throw new Error(r.error);alert('Operations approval saved.');openReviewDetail(currentReviewId);}catch(e){alert(e.message);}
+}
+async function submitQC(){
+  const qc={inspectionId:currentReviewId,result:read('qc_result'),ncrReference:read('qc_ncr'),correctiveAction:read('qc_corrective'),targetCompletionDate:read('qc_target_date'),reviewerName:read('qc_reviewer')};
+  if(!qc.result||!qc.reviewerName){alert('QC Result and Reviewer Name are required.');return;}
+  try{const r=await api('saveQC',{session,qc});if(!r.ok)throw new Error(r.error);alert('QC verification saved.');openReviewDetail(currentReviewId);}catch(e){alert(e.message);}
+}
+async function submitSchedule(){
+  const schedule={inspectionId:currentReviewId,team:read('sch_team'),leadTechnician:read('sch_lead'),scheduleDate:read('sch_date'),expectedCompletionDate:read('sch_expected')};
+  if(!schedule.team||!schedule.leadTechnician||!schedule.scheduleDate){alert('Team, Lead Technician, and Schedule Date are required.');return;}
+  try{const r=await api('saveSchedule',{session,schedule});if(!r.ok)throw new Error(r.error);alert('Schedule saved.');openReviewDetail(currentReviewId);}catch(e){alert(e.message);}
+}
+
+document.getElementById('loginForm').addEventListener('submit',login);document.getElementById('logoutBtn').addEventListener('click',logout);document.getElementById('newInspectionBtn').addEventListener('click',startInspection);document.getElementById('cancelInspectionBtn').addEventListener('click',cancelInspection);document.getElementById('prevBtn').addEventListener('click',()=>{if(step>0){step--;showStep()}});document.getElementById('nextBtn').addEventListener('click',next);document.getElementById('refreshBtn').addEventListener('click',()=>{loadDashboard();syncQueue()});document.getElementById('reviewNavBtn').addEventListener('click',openReviewQueue);document.getElementById('backToDashboardBtn').addEventListener('click',backToDashboard);document.getElementById('backToReviewListBtn').addEventListener('click',backToReviewList);document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchReviewTab(b.dataset.tab)));window.addEventListener('online',()=>{updateOfflineBanner();syncQueue()});window.addEventListener('offline',updateOfflineBanner);window.addEventListener('load',()=>{if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});if(loadSession())boot();});

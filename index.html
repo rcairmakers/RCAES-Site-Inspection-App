@@ -27,7 +27,10 @@
     <section id="mainView" class="screen hidden">
       <header class="topbar">
         <div><strong>R&C Airmakers</strong><small id="userName"></small></div>
-        <button id="logoutBtn" class="ghost">Logout</button>
+        <div class="topbar-actions">
+          <button id="reviewNavBtn" class="ghost hidden">Review Queue</button>
+          <button id="logoutBtn" class="ghost">Logout</button>
+        </div>
       </header>
       <main>
         <div class="offline-banner hidden" id="offlineBanner">Offline mode — new inspections are saved on this device and will sync later.</div>
@@ -43,6 +46,23 @@
           <div class="progress"><span id="progressBar"></span></div>
           <form id="inspectionForm"></form>
           <div class="wizard-actions"><button id="prevBtn" type="button" class="ghost">Back</button><button id="nextBtn" type="button" class="primary">Next</button></div>
+        </section>
+
+        <section id="reviewPanel" class="panel hidden">
+          <div class="panel-head"><div><h2>Review Queue</h2><p>Operations approval, QC & scheduling</p></div><button id="backToDashboardBtn" class="ghost">Back</button></div>
+          <div id="reviewList" class="recent-list"></div>
+        </section>
+
+        <section id="reviewDetailPanel" class="panel hidden">
+          <div class="panel-head"><div><h2 id="reviewDetailTitle">Inspection</h2><p id="reviewDetailSub"></p></div><button id="backToReviewListBtn" class="ghost">Back</button></div>
+          <div class="review-tabs">
+            <button type="button" class="tab-btn active" data-tab="approval">Operations Approval</button>
+            <button type="button" class="tab-btn" data-tab="qc">QC Verification</button>
+            <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
+          </div>
+          <div id="reviewTabApproval" class="review-tab active"></div>
+          <div id="reviewTabQc" class="review-tab"></div>
+          <div id="reviewTabSchedule" class="review-tab"></div>
         </section>
       </main>
     </section>
