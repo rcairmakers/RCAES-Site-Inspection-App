@@ -1,4 +1,4 @@
-const API_URL = 'https://script.google.com/macros/s/AKfycbyD9as7f3Xgpz0un8CczLORcV2JJfpSZw_ZAYXEw4d9LWwaeDlXJy5O0seXB5Pg5sySsg/exec';
+const API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
 const SESSION_KEY='rcaes_session_v1';
 const QUEUE_KEY='rcaes_queue_v1';
 let session=null, step=0;
@@ -50,13 +50,34 @@ function select(id,label,opts,full=false){return `<label class="${full?'full':''
 function checks(id,label,opts){return `<div class="full"><div class="field-title">${label}</div><div class="checks">${opts.map((x,i)=>`<label class="check"><input type="checkbox" data-group="${id}" value="${x}"><span>${x}</span></label>`).join('')}</div></div>`;}
 
 let unitCount=0;
-function addUnit(prefill={}){unitCount++;const wrap=document.getElementById('unitsWrap');const div=document.createElement('div');div.className='unit-card';div.dataset.unit=unitCount;div.innerHTML=`<div class="unit-head"><strong>Unit ${unitCount}</strong><button type="button" class="ghost" onclick="this.closest('.unit-card').remove()">Remove</button></div><div class="grid">${field('unit_brand_'+unitCount,'Brand')}${field('unit_model_'+unitCount,'Model')}${field('unit_hp_'+unitCount,'HP')}${field('unit_indoor_'+unitCount,'Indoor Location')}${field('unit_outdoor_'+unitCount,'Outdoor Location')}</div>`;wrap.appendChild(div);}
+function addUnit(prefill={}){
+ unitCount++;
+ const n=unitCount;
+ const wrap=document.getElementById('unitsWrap');
+ const div=document.createElement('div');
+ div.className='unit-card';
+ div.dataset.unit=n;
+ div.innerHTML=`<div class="unit-head"><strong>Unit ${n}</strong><button type="button" class="ghost" onclick="this.closest('.unit-card').remove()">Remove</button></div><div class="grid">${field('unit_brand_'+n,'Brand')}${field('unit_model_'+n,'Model')}${field('unit_hp_'+n,'HP')}${field('unit_indoor_'+n,'Indoor Location')}${field('unit_outdoor_'+n,'Outdoor Location')}</div>`;
+ wrap.appendChild(div);
+ Object.entries(prefill||{}).forEach(([k,v])=>{const id={brand:'unit_brand_'+n,model:'unit_model_'+n,hp:'unit_hp_'+n,indoorLocation:'unit_indoor_'+n,outdoorLocation:'unit_outdoor_'+n}[k];if(id&&v!==undefined)document.getElementById(id).value=v;});
+}
 
-function showStep(){const form=document.getElementById('inspectionForm');form.innerHTML=steps.map((s,i)=>s.html()).join('');document.querySelectorAll('.step').forEach((el,i)=>el.classList.toggle('active',i===step));document.getElementById('stepTitle').textContent=steps[step].title;document.getElementById('progressBar').style.width=((step+1)/steps.length*100)+'%';document.getElementById('prevBtn').style.visibility=step===0?'hidden':'visible';document.getElementById('nextBtn').textContent=step===steps.length-1?'Save Inspection':'Next';if(step===1&&!document.querySelector('.unit-card'))addUnit();}
+function showStep(){
+ const form=document.getElementById('inspectionForm');
+ // Render the wizard once, then only switch the visible step.
+ // Re-rendering on every Next would clear all previously entered values.
+ if(!form.innerHTML.trim()) form.innerHTML=steps.map((s,i)=>s.html()).join('');
+ document.querySelectorAll('.step').forEach((el,i)=>el.classList.toggle('active',i===step));
+ document.getElementById('stepTitle').textContent=steps[step].title;
+ document.getElementById('progressBar').style.width=((step+1)/steps.length*100)+'%';
+ document.getElementById('prevBtn').style.visibility=step===0?'hidden':'visible';
+ document.getElementById('nextBtn').textContent=step===steps.length-1?'Save Inspection':'Next';
+ if(step===1&&!document.querySelector('.unit-card'))addUnit();
+}
 function read(id){return document.getElementById(id)?.value||''}
 function readChecks(group){return [...document.querySelectorAll(`[data-group="${group}"]:checked`)].map(x=>x.value)}
 function collect(){
- const units=[...document.querySelectorAll('.unit-card')].map((c,i)=>({brand:read('unit_brand_'+(i+1)),model:read('unit_model_'+(i+1)),hp:read('unit_hp_'+(i+1)),indoorLocation:read('unit_indoor_'+(i+1)),outdoorLocation:read('unit_outdoor_'+(i+1))}));
+ const units=[...document.querySelectorAll('.unit-card')].map(c=>{const n=c.dataset.unit;return {brand:read('unit_brand_'+n),model:read('unit_model_'+n),hp:read('unit_hp_'+n),indoorLocation:read('unit_indoor_'+n),outdoorLocation:read('unit_outdoor_'+n)}});
  const assessments={
   indoor:{checks:readChecks('indoor'),height:read('indoor_height'),ceilingDistance:read('ceiling_distance'),sideWallDistance:read('sidewall_distance'),remarks:read('indoor_remarks')},
   outdoor:{checks:readChecks('outdoor'),type:read('outdoor_type'),height:read('outdoor_height'),distance:read('indoor_outdoor_distance'),remarks:read('outdoor_remarks')},
@@ -85,7 +106,7 @@ function logout(){session=null;localStorage.removeItem(SESSION_KEY);document.get
 async function login(e){e.preventDefault();const msg=document.getElementById('loginMsg');msg.textContent='Signing in...';if(API_URL.includes('PASTE_')){msg.textContent='Configure API_URL in app.js first.';return}if(!navigator.onLine){const cached=loadSession();if(cached){boot();return}msg.textContent='First login requires internet.';return}try{const r=await api('login',{username:read('username'),password:read('password')});if(!r.ok)throw new Error(r.error);saveSession(r.session);boot();}catch(err){msg.textContent=err.message}}
 async function loadDashboard(){if(!session)return;try{const r=await api('dashboard',{session});if(!r.ok)throw new Error(r.error);renderDashboard(r)}catch(e){if(navigator.onLine) console.warn(e)}}
 function renderDashboard(r){const c=r.counts||{};document.getElementById('stats').innerHTML=[['Total',c.total||0],['Last 30 Days',c.recent30||0],['For Quotation',c.forQuotation||0],['For Scheduling',c.forScheduling||0],['High/Critical Risk',c.highRisk||0]].map(x=>`<div class="stat"><strong>${x[1]}</strong><span>${x[0]}</span></div>`).join('');document.getElementById('recentList').innerHTML=(r.recent||[]).map(x=>`<div class="recent"><div><strong>${x.inspectionId}</strong><div>${x.recommendation||'—'}</div></div><span class="badge">${x.status||'—'}</span></div>`).join('')||'<p>No inspections yet.</p>'}
-function startInspection(){step=0;unitCount=0;document.getElementById('dashboardPanel').classList.add('hidden');document.getElementById('inspectionPanel').classList.remove('hidden');showStep()}
+function startInspection(){step=0;unitCount=0;document.getElementById('dashboardPanel').classList.add('hidden');document.getElementById('inspectionPanel').classList.remove('hidden');document.getElementById('inspectionForm').innerHTML='';showStep()}
 function cancelInspection(){document.getElementById('inspectionPanel').classList.add('hidden');document.getElementById('dashboardPanel').classList.remove('hidden')}
 function next(){const inputs=[...document.querySelectorAll('.step.active input,.step.active select,.step.active textarea')];const valid=inputs.every(x=>x.checkValidity());if(!valid){inputs.find(x=>!x.checkValidity())?.reportValidity();return}if(step<steps.length-1){step++;showStep()}else saveInspection()}
 async function saveInspection(){const data=collect();if(!navigator.onLine||API_URL.includes('PASTE_')){const q=queue();q.push(data);setQueue(q);finishSaved('Saved offline — will sync automatically when online.');return}try{const r=await api('saveInspection',{session,inspection:data});if(!r.ok)throw new Error(r.error);finishSaved(`Inspection ${r.inspectionId} saved to Google Sheets.`);loadDashboard();}catch(e){const q=queue();q.push(data);setQueue(q);finishSaved('Saved on device because the server is unavailable.');}}
