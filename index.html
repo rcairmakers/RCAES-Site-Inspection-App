@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b2a4a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <title>RCAES Mobile</title>
+</head>
+<body>
+  <div id="app">
+    <section id="loginView" class="screen center-screen">
+      <div class="brand-card">
+        <div class="logo-mark">R&C</div>
+        <h1>R&C Airmakers</h1>
+        <p>Site Inspection Mobile App</p>
+        <form id="loginForm">
+          <label>Username<input id="username" required autocomplete="username"></label>
+          <label>Password<input id="password" type="password" required autocomplete="current-password"></label>
+          <button class="primary" type="submit">Sign in</button>
+        </form>
+        <div id="loginMsg" class="msg"></div>
+      </div>
+    </section>
+
+    <section id="mainView" class="screen hidden">
+      <header class="topbar">
+        <div><strong>R&C Airmakers</strong><small id="userName"></small></div>
+        <button id="logoutBtn" class="ghost">Logout</button>
+      </header>
+      <main>
+        <div class="offline-banner hidden" id="offlineBanner">Offline mode — new inspections are saved on this device and will sync later.</div>
+        <section id="dashboardPanel" class="panel">
+          <div class="panel-head"><div><h2>Dashboard</h2><p>Site inspection overview</p></div><button id="newInspectionBtn" class="primary">+ New Inspection</button></div>
+          <div class="stats" id="stats"></div>
+          <div class="panel-head compact"><h3>Recent Inspections</h3><button id="refreshBtn" class="ghost">Refresh</button></div>
+          <div id="recentList" class="recent-list"></div>
+        </section>
+
+        <section id="inspectionPanel" class="panel hidden">
+          <div class="panel-head"><div><h2>New Site Inspection</h2><p id="stepTitle">Customer & Project</p></div><button id="cancelInspectionBtn" class="ghost">Cancel</button></div>
+          <div class="progress"><span id="progressBar"></span></div>
+          <form id="inspectionForm"></form>
+          <div class="wizard-actions"><button id="prevBtn" type="button" class="ghost">Back</button><button id="nextBtn" type="button" class="primary">Next</button></div>
+        </section>
+      </main>
+    </section>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

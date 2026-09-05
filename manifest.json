@@ -1,0 +1,9 @@
+{
+  "name":"RCAES Mobile Site Inspection",
+  "short_name":"RCAES Mobile",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#f4f7fa",
+  "theme_color":"#0b2a4a",
+  "icons":[]
+}
