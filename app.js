@@ -1,4 +1,4 @@
-const API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyD9as7f3Xgpz0un8CczLORcV2JJfpSZw_ZAYXEw4d9LWwaeDlXJy5O0seXB5Pg5sySsg/exec';
 const SESSION_KEY='rcaes_session_v1';
 const QUEUE_KEY='rcaes_queue_v1';
 let session=null, step=0;
