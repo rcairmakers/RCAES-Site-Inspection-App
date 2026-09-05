@@ -97,7 +97,7 @@ function collect(){
 async function api(action,body){const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...body})});return res.json();}
 function queue(){return JSON.parse(localStorage.getItem(QUEUE_KEY)||'[]')}
 function setQueue(q){localStorage.setItem(QUEUE_KEY,JSON.stringify(q))}
-async function syncQueue(){if(!navigator.onLine||API_URL.includes('PASTE_'))return;let q=queue();if(!q.length)return;const remaining=[];for(const item of q){try{const r=await api('saveInspection',{session,item});if(!r.ok)throw new Error(r.error)}catch(e){remaining.push(item)}}setQueue(remaining);updateOfflineBanner();loadDashboard();}
+async function syncQueue(){if(!navigator.onLine||API_URL.includes('PASTE_'))return;let q=queue();if(!q.length)return;const remaining=[];for(const item of q){try{const r=await api('saveInspection',{session,inspection:item});if(!r.ok)throw new Error(r.error)}catch(e){remaining.push(item)}}setQueue(remaining);updateOfflineBanner();loadDashboard();}
 function updateOfflineBanner(){document.getElementById('offlineBanner').classList.toggle('hidden',navigator.onLine);}
 function saveSession(s){session=s;localStorage.setItem(SESSION_KEY,JSON.stringify(s));}
 function loadSession(){try{session=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch(e){session=null}return session}
